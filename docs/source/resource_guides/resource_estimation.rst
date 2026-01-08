@@ -4,15 +4,11 @@ Generalized Resource Estimation
 
 .. raw:: html
 
-   <p style="font-size:14px; color:#444;">
-   <b>Authors:</b> Abhin Suresh (University of Delaware), Kevin Bhimani (University of Delaware), Evan Jaffe (Ohio Supercomputing Center)
-   </p>
-
 Overview
 --------
 Welcome! This guide is intended for new researchers interested in
 submitting a NAIRR Pilot proposal who have little experience with
-HPC or large-scale resources.
+HPC or large-scale resources. The goal is to help you complete the resource estimation section while completing a NAIRR Pilot proposal
 
 Learning Outcomes
 -----------------
@@ -66,10 +62,14 @@ Plan for the storage classes you’ll use and how data flows between different s
   Long-lived space for datasets, checkpoints, and logs. Backed up and quota-limited.
 
 - **Scratch** (ephemeral, very fast, local)  
-  Temporary high-performance space used during runs. Purged automatically and not for long term storage.
+  Temporary high-performance space used during runs. Purged automatically and not for long term storage. A common retention window is **~7–30 days**, but policies vary by host site.
 
 - **Archive / long-term storage** (persistent, slower, cost-efficient)  
   For the data you rarely access
+
+  .. note::
+   Scratch is typically **not backed up** and is often purged on a schedule. Plan to copy important data and outputs to project storage regularly.
+
 
 Interactive Estimator
 ---------------------
@@ -220,9 +220,49 @@ The SUs scale quickly. To get an estimate for the SU requirement, consider using
    </div>
 
 .. note::
-   Set **SU/core-hour** and **SU/GPU-hour** to match the resource you plan to request.
+   Set **SU per core-hour** and **SU per GPU-hour** to match the resource you plan to request.
 
-See Also
+
+Overhead: what to include and how to estimate
+------------------------------------------------------
+Most projects need a buffer to cover work that is real, expected, and often forgotten in early estimates.
+Overhead is any compute and storage consumed outside the ideal production runs.
+
+Common sources of overhead
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- **Retries and restarts** such as preemptions, node failures and network interruptions
+- **Queue and workflow variability** in case of failed jobs due to walltime limits and scheduler constraints
+- **Profiling and performance tuning** profiling runs can add up
+- **Hyperparameter exploration** even a small grid search can add to total compute cost
+- **Data validation and integrity checks** processing data for modelling and inference is commonly underestiamted
+- **Unit/integration tests for custom code** especially if tests are non-trivial or run frequently
+- **Rebuild cycles** some large codebase build times can also add to the overall compute
+
+A practical way to estimate overhead
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use one of these approaches are:
+
+1) **Rule-of-thumb buffer:**
+   Add **20–30%** if you are early in development or new to HPC workflows.
+
+2) **Component-based overhead:**
+   Estimate overhead as the sum of a few explicit buckets, e.g.:
+
+   - tests: [X test runs] × [test runtime] × [resources requested]
+   - profiling: [Y profiling runs] × [runtime] × [resources]
+   - retries: [Z%] of production runtime
+   - hyperparameter search: [N extra runs] × [runtime] × [resources]
+
+3) **Historical rate:**
+   If you have past runs use it to estimate an “overhead factor”:
+
+.. note::
+   Unit tests and build-debug loops can meaningfully impact allocations, especially when tests fail and
+   software must be rebuilt or reconfigured. If you run tests on every build or before every large run,
+   include them explicitly in your overhead estimate.
+
+Recommended Reading
+
 --------
 The pages below provides a brief guide to estimate resources for different architectures.
 
