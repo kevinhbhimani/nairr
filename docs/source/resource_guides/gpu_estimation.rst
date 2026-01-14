@@ -25,7 +25,9 @@ head, :math:`T` is the context length and :math:`b` is bytes per element (FP16=2
 With the typical values of these parameters :math:`(L=32, H=32, d=128, b=2)`
 the **VRAM** from KV cache is over **0.5 GB** for context length in thousands tokens.
 For the purpose of resource estimation, we can consider **1 GB** per
-thousand tokens as a **conservative upper bound**. The overhead constitutes
+thousand tokens as a **conservative upper bound**.
+
+The overhead constitutes
 *CUDA context*, *cuBLAS/cuDNN workspaces*, *kernel launch buffers* that can 
 vary from **300 MB** to **1 GB** per process
 
@@ -124,6 +126,79 @@ VRAM ≈ 6 GB (weights) + 16 GB (KV-cache) + (3.3 + 1) GB (overhead) = **~27 GB*
         window.addEventListener('load', updateVRAM());
       </script>
     </div>
+
+A Small code to test the memory consumption and performance
+-----------------------------------------------------------
+Install the relavent packages like pytorch, transformers etc. and 
+run in a machine with gpu access. You can also watch the gpu usage though
+``watch -n 0.5 nvidia-smi`` command. 
+
+.. code-block:: python
+
+    import torch, time                                                  
+    from transformers import AutoTokenizer, AutoModelForCausalLM        
+                                                                                                                                    
+    MODEL = "gpt2-large"                                                
+    DTYPE = torch.float16                                               
+    DEVICE = "cuda"                                                     
+    max_new_tokens = 256                                                
+                                                                    
+    prompt = "Explain KV cache in one paragraph."                     
+    # downloads or loads correct tokenizer for the model files          
+    tokenizer = AutoTokenizer.from_pretrained(MODEL, use_fast=True)     
+    # choose correct model, loads weights, device_map:which device to run         
+    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=DTYPE).to(DEVICE)    
+                                                                        
+    # tokenize input as tensors and move to gpu                                    
+    inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)          
+    # warm-up run to intialized cuda kernels, allocate buffers          
+    with torch.inference_mode():                                        
+        _ = model.generate(**inputs, max_new_tokens=32, do_sample=False)
+                                                                        
+    # wait for gpu to finish the process                                
+    torch.cuda.synchronize()                                            
+    # resets previous peak memory stats                                 
+    torch.cuda.reset_peak_memory_stats() 
+                               
+    # start timing                                                                   
+    t0 = time.perf_counter()                                            
+    with torch.inference_mode():                                        
+        out = model.generate(**inputs, max_new_tokens=max_new_tokens,   
+                            do_sample=False)                            
+                                                                        
+    torch.cuda.synchronize()
+    t1 = time.perf_counter()                                   
+                                                           
+    new_tokens = out.shape[-1] - inputs["input_ids"].shape[-1] 
+                                                               
+    tok_per_s = new_tokens / (t1 - t0)                         
+    peak_alloc = torch.cuda.max_memory_allocated() / 1024**3   
+    peak_reserved = torch.cuda.max_memory_reserved() / 1024**3 
+                                                               
+    print(f"Generated tokens: {new_tokens}")                   
+    print(f"Time: {t1 - t0:.3f} s")                            
+    print(f"Throughput: {tok_per_s:.2f} tokens/s")             
+    print(f"Peak allocated: {peak_alloc:.2f} GB")              
+    print(f"Peak reserved:  {peak_reserved:.2f} GB")                                                 
+
+where **Peak allocated** is the actual memory used by the tensors, a
+good apprixmation of the real usage. **Peak reserved** is the memory
+reserved by the PyTorch's allocator. For **small models**, GPU memory is dominated 
+by **fixed overhead**, not the model itself, that's why you might see
+more vram used through ``nvidia-smi`` command.
+
+On a machine with NVIDIA GeForce 1050 Ti with Max-Q Design, the code
+resulted in
+
+.. code-block:: bash
+
+    Generated tokens: 256     
+    Time: 17.774 s            
+    Throughput: 14.40 tokens/s
+    Peak allocated: 1.53 GB   
+    Peak reserved:  1.67 GB    
+
+while nvidia-smi showed max memory usage of 1.8 GB.
 
 Estimating GPU Memory for Training
 ----------------------------------
