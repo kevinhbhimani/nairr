@@ -9,21 +9,121 @@ out-of-memory (OOM) errors and unnecessary resource waste.
 
 Estimating GPU Memory for Inference
 -----------------------------------
+In an autoregressive transformer, each new token attends to all previous tokens.
+In order to avoid recomputing attention for previous token at each step, 
+the models stores the **Keys** and **Values** for every later and attention head.
+This stored value is called KV cache. This process drastically reduce
+computational time from :math:`O(T^2)` to :math:`O(T)` at the cost of **VRAM**
+
+.. math::
+    \textrm{KV-cache} = 2 \times L \times H \times d \times T \times b,
+
+where the factor 2 comes from storing bothe keys and values, :math:`L` is the number of 
+transformer layers, :math:`H` is the number of attention heads, :math:`d` is the dimension of the
+head, :math:`T` is the context length and :math:`b` is bytes per element (FP16=2).
+
+With the typical values of these parameters :math:`(L=32, H=32, d=128, b=2)`
+the **VRAM** from KV cache is over **0.5 GB** for context length in thousands tokens.
+For the purpose of resource estimation, we can consider **1 GB** per
+thousand tokens as a **conservative upper bound**. The overhead constitutes
+*CUDA context*, *cuBLAS/cuDNN workspaces*, *kernel launch buffers* that can 
+vary from **300 MB** to **1 GB** per process
+
 A quick rule of thumb for estimating GPU VRAM in GB:
 
 .. math::
-
-   \mathrm{VRAM}_{\text{inference}} \;(\mathrm{GB}) \;\approx\;
+   \begin{align}
+   \mathrm{VRAM}_{\text{inference}} \;(\mathrm{GB}) \;\approx\; &
    2 \times \mathrm{params}_{(\mathrm{billions})}
-   \;+\; 1 \times \mathrm{context\ length}_{(\mathrm{thousands})}
+   \;+\;\\ & 1 \times \mathrm{context\ length}_{(\mathrm{thousands})} +\\
+    & 0.15 \times (\mathrm{weight_{params}} + \mathrm{weight_{context\ length}}) + 1.
+    \end{align}
 
 **Example.** For **StableCode** with 3B parameters and 16k context,
-VRAM ≈ 6 GB (weights) + 16 GB (overhead) = **~22 GB** total. This fits on an
-**A100** or **H100** for inference.
+VRAM ≈ 6 GB (weights) + 16 GB (KV-cache) + (3.3 + 1) GB (overhead) = **~27 GB** total. This fits on an
+**A100**, **H100**, or 32GB **V100** for inference.
 
-**Notes**
-- Assumes fp16; quantization (8-bit, 4-bit) can reduce VRAM further.
-- Actual usage depends on framework/runtime and settings (e.g., CUDA graphs, KV cache policy, preallocation).
+.. note::
+    - For inference, context length is the major bottleneck consider droping old tokens.
+    - Actual usage depends on framework/runtime and settings (e.g., CUDA graphs, KV cache policy, preallocation).
+
+.. raw:: html
+
+    <div id="vram_calc" style="font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; border:1px solid #e5e7eb; padding:16px; border-radius:12px; max-width:900px;">
+      <h3>Inference VRAM Requirement Estimator</h3>
+        <style> 
+           #vram_calc .row{display:grid;grid-template-columns:220px 1fr 90px;gap:10px;align-items:center;margin:10px 0;}
+           #vram_calc .row-select{display: grid; grid-template-columns: 220px 1fr; gap: 10px; align-items: center;} 
+           #vram_calc input[type=range]{width:100%;}
+           #vram_calc .small{color:#6b7280;font-size:12px}
+           #vram_calc .num{width:80px}
+           #vram_calc .card{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+           #vram_calc .box{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+           #vram_calc h4{margin:12px 0 6px 0;font-size:14px}
+           #vram_calc .big{font-weight:600;font-size:18px}
+           #vram_calc code{background:#f8fafc;padding:0 4px;border-radius:4px}
+        </style>
+    
+      <div class="row">
+        <label>Model size(Billion parameters):</label>
+        <input type="range" id="params" min="1" max="200" step="1" value="7" oninput="updateVRAM()">
+        <input type="text" id="params_val" value="7 B" readonly>
+      </div>
+
+      <div class="row">
+        <label>Context length (tokens):</label>
+        <input type="range" id="context" min="1" max="32" step="1" value="4" oninput="updateVRAM()">
+        <input type="text" id="context_val" value="4 k" readonly>
+      </div>
+      
+      <div class="row-select">
+        <label for="quant">Quantization:</label>
+        <select id="quant" onchange="updateVRAM()">
+          <option value="16">FP16</option>
+          <option value="32">FP32</option>
+          <option value="8">INT8</option>
+          <option value="4">INT4</option>
+        </select>
+      </div>
+
+     
+    <div class="card">
+       <div class="box">
+         <h4>Estimated VRAM</h4>
+         <div class="big" id="vram">—</div>
+         <div class="small">VRAM ≈ parameters(B) × bytes/parameter + KV-cache + overhead</div>
+       </div>
+
+      <script>
+        function updateVRAM() {
+          let params = parseFloat(document.getElementById('params').value);
+          let ctx_k = parseInt(document.getElementById('context').value);
+          let q = parseInt(document.getElementById('quant').value);
+        
+          // derived values
+          let ctx = ctx_k * 1000;                 // actual tokens
+          let bytes_per_param = q / 8;
+
+          // model weights (GB)
+          let weight_vram = params * bytes_per_param;
+
+          // KV cache (1 MB per token)
+          let kv_vram = ctx * 0.001;
+
+          // runtime overhead
+          let overhead = 0.15 * (weight_vram + kv_vram) + 1;
+
+          // total VRAM
+          let total_vram = weight_vram + kv_vram + overhead;
+
+          // UI updates
+          document.getElementById('params_val').value = params + " B";
+          document.getElementById('context_val').value = ctx_k + " k";
+          document.getElementById('vram').innerText = total_vram.toFixed(1) + " GB";
+        }
+        window.addEventListener('load', updateVRAM());
+      </script>
+    </div>
 
 Estimating GPU Memory for Training
 ----------------------------------
