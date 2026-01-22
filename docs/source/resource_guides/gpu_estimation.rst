@@ -18,7 +18,7 @@ computational time from :math:`O(T^2)` to :math:`O(T)` at the cost of **VRAM**
 .. math::
     \textrm{KV-cache} = 2 \times L \times H \times d \times T \times b,
 
-where the factor 2 comes from storing bothe keys and values, :math:`L` is the number of 
+where the factor 2 comes from storing both keys and values, :math:`L` is the number of 
 transformer layers, :math:`H` is the number of attention heads, :math:`d` is the dimension of the
 head, :math:`T` is the context length and :math:`b` is bytes per element (FP16=2).
 
@@ -46,7 +46,7 @@ VRAM ≈ 6 GB (weights) + 16 GB (KV-cache) + (3.3 + 1) GB (overhead) = **~27 GB*
 **A100**, **H100**, or 32GB **V100** for inference.
 
 .. note::
-    - For inference, context length is the major bottleneck consider droping old tokens.
+    - For inference, context length is the major bottleneck consider dropping old tokens.
     - Actual usage depends on framework/runtime and settings (e.g., CUDA graphs, KV cache policy, preallocation).
 
 .. raw:: html
@@ -129,7 +129,7 @@ VRAM ≈ 6 GB (weights) + 16 GB (KV-cache) + (3.3 + 1) GB (overhead) = **~27 GB*
 
 A Small code to test the memory consumption and performance
 -----------------------------------------------------------
-Install the relavent packages like pytorch, transformers etc. and 
+Install the relevent packages like pytorch, transformers etc. and 
 run in a machine with gpu access. You can also watch the gpu usage though
 ``watch -n 0.5 nvidia-smi`` command. 
 
@@ -182,7 +182,7 @@ run in a machine with gpu access. You can also watch the gpu usage though
     print(f"Peak reserved:  {peak_reserved:.2f} GB")                                                 
 
 where **Peak allocated** is the actual memory used by the tensors, a
-good apprixmation of the real usage. **Peak reserved** is the memory
+good approximation of the real usage. **Peak reserved** is the memory
 reserved by the PyTorch's allocator. For **small models**, GPU memory is dominated 
 by **fixed overhead**, not the model itself, that's why you might see
 more vram used through ``nvidia-smi`` command.
@@ -270,25 +270,26 @@ memory and utilization. It’s the fastest way to sanity-check **VRAM usage** an
 - **GPU-Util** → percent of time kernels keep the GPU busy
 - **Processes table** → *which PID / program* is using VRAM
 
-**Watch continuously (refresh every 2s)**
+**Watch continuously (refresh every 0.5s)**
 
 .. code-block:: bash
 
-   nvidia-smi -l 2
+   watch -n 0.5 nvidia-smi
 
 **Log to CSV over time (for later plotting)**
 
 .. code-block:: bash
 
-   nvidia-smi \
-     --query-gpu=timestamp,index,name,memory.total,memory.used,utilization.gpu \
-     --format=csv -l 2 >> gpu_usage.csv
+   timeout 60s nvidia-smi --query-gpu=timestamp,power.draw,memory.used,temperature.gpu \
+    --format=csv,nounits -l 1 > gpu_usage.csv
+
 
 **Per-process view (memory by PID)**
 
 .. code-block:: bash
 
-   nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
+    timeout 60s nvidia-smi --query-compute-apps=pid,process_name,used_memory \
+    --format=csv,nounits -l 1 > gpu_usage.csv
 
 **Find the right node (SLURM clusters)**
 
@@ -305,8 +306,8 @@ Tips
 - Combine with ``/usr/bin/time -v`` to capture **CPU/RAM** alongside GPU stats.
 - If VRAM is near capacity, try **smaller batch/sequence**, **activation checkpointing**, or **quantization**.
 
-See Also
---------
+Recommended Reading
+-------------------
 * :doc:`Generalized Resource Estimation <resource_estimation>`
 * :doc:`CPU Estimate <cpu_estimation>`
 

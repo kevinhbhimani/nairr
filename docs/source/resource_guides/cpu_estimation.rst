@@ -27,7 +27,7 @@ that multiplies two matrices:
    c = a @ b
    print("Multiplying matrices of size", N)
 
-Extracting Infromation From Shell Command
+Extracting Information From Shell Command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can use this shell command to measure wall time, CPU time, and 
 peak RAM for your Python program:
@@ -37,11 +37,12 @@ peak RAM for your Python program:
    /usr/bin/time -v python mult.py > program_out.log 2> log.out
 
 The file ``program_out.log`` captures your program’s printed output, 
-while ``log.out`` records resource usage metrics. The relavent parts 
+while ``log.out`` records resource usage metrics. The relevent parts 
 of the ``log.out`` in while running the job on intel i7-1185G7 while
 setting number of *threads* to **1**
 
 .. code-block:: text
+    :linenos:
 
    Command being timed: "python mult.py"
    User time (seconds): 27.52
@@ -53,6 +54,7 @@ setting number of *threads* to **1**
 and while setting the number of *threads* to **4**
 
 .. code-block:: text
+    :linenos:
     
    Command being timed: "python mult.py"
    User time (seconds): 59.21
@@ -63,7 +65,7 @@ and while setting the number of *threads* to **4**
 
 Here, the output parameters corresponds to:
 
-- Wall clock time: elaspsed time for running your code
+- Wall clock time: elapsed time for running your code
 - User time: time CPU spend executing your calculation
 - System time: time taken by the system on waiting on I/O
 - Peak RAM: the maximum amount of RAM consumed by your program. This
@@ -89,6 +91,44 @@ Here, the output parameters corresponds to:
     hours based on number of CPUs you reqested. Its is your job to
     maximize the efficiency of the program to avoid wastage
 
+Example slurm script
+~~~~~~~~~~~~~~~~~~~~
+If you want to run the command in a compute node (sometimes specific 
+compute node) instead of login node you can either request for an 
+**interactive** session and submit a **batch job**. You might also
+need to choose your workgroup ``workgroup -g test`` before requesting 
+for a compute node.
+
+Interactive session
+"""""""""""""""""""
+.. code-block:: bash
+
+    salloc --job-name=interactive --partition=standard --nodes=1 --mem=16G --time=02:00:00
+
+Batch Job submission
+""""""""""""""""""""
+.. code-block:: bash
+    :linenos:
+ 
+    #!/bin/bash
+    #SBATCH --job-name=mult_py
+    #SBATCH --output=slurm_%j.out
+    #SBATCH --error=slurm_%j.err
+    #SBATCH --time=01:00:00
+    #SBATCH --ntasks=1
+    #SBATCH --cpus-per-task=1
+    #SBATCH --mem=16G
+
+    # optional: load modules or activate environment
+    # module load python
+    # source ~/.aiml/bin/activate
+
+    /usr/bin/time -v python mult.py > program_out.log 2> log.out
+
+After saving the above file as *submit.slurm* you can submit batch job 
+using the command ``sbatch submit.slurm``
+
+
 Limiting Threads
 ----------------
 To get a consistent baseline on a single core, restrict NumPy’s 
@@ -110,7 +150,7 @@ to use MKL. You can check the NumPy linkage by executing the command
 
 You can also verify the number of threads being used using the command
 ``htop`` in your Shell. Once you have your baseline run without any errors, 
-you can scale up by varying the associated environment varibale in 
+you can scale up by varying the associated environment variable in 
 the above case of python matrix multiplication, or varying number of 
 processes in an MPI run for distributed computation.
 
@@ -121,12 +161,12 @@ processes in an MPI run for distributed computation.
 .. note::
 
     For the Python matrix multiplication example above, it 
-    might be faster to run on single thread comapred to multiple 
-    threads unless you have large engough matrix.
+    might be faster to run on single thread compared to multiple 
+    threads unless you have large enough matrix.
 
 .. note::
 
-    When you have both mpi and mulithreading, it is a good idea to 
+    When you have both mpi and multithreading, it is a good idea to 
     set the number of mpi processes :math:`\times` number of threads 
     to not exceed the number of available/requested CPU cores
 
@@ -146,7 +186,7 @@ Run 10 jobs in parallel (to finish sooner): still **1,600 core-hours** total.
 Add 20% buffer ⇒ **1,920 core-hours**.  
 **Storage:** inputs 4 TB, outputs 6 TB, logs+artifacts +1 TB ⇒ **11 TB**; retain 2 months ⇒ **22 TB-months**.
 
-See Also
---------
+Recommended Reading
+-------------------
 * :doc:`Generalized Resource Estimation <resource_estimation>`
 * :doc:`GPU Estimate <gpu_estimation>`

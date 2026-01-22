@@ -31,7 +31,7 @@ Getting Started
 A well-written proposal includes a detailed breakdown of the resources needed.
 To get started, the following steps can be useful:
 
-1. **Define the scenarios** you will actually run to understand data preparation, model train, inferrence, post processing, storage needs.
+1. **Define the scenarios** you will actually run to understand data preparation, model train, inference, post processing, storage needs.
 
 2. **Run a small pilot** that finishes in minutes to collect timing and resource data.
 
@@ -234,7 +234,7 @@ Common sources of overhead
 - **Queue and workflow variability** in case of failed jobs due to walltime limits and scheduler constraints
 - **Profiling and performance tuning** profiling runs can add up
 - **Hyperparameter exploration** even a small grid search can add to total compute cost
-- **Data validation and integrity checks** processing data for modelling and inference is commonly underestiamted
+- **Data validation and integrity checks** processing data for modelling and inference is commonly underestimated
 - **Unit/integration tests for custom code** especially if tests are non-trivial or run frequently
 - **Rebuild cycles** some large codebase build times can also add to the overall compute
 
@@ -262,8 +262,7 @@ Use one of these approaches are:
    include them explicitly in your overhead estimate.
 
 Recommended Reading
-
---------
+-------------------
 The pages below provides a brief guide to estimate resources for different architectures.
 
 * :doc:`CPU Estimate <cpu_estimation>`
