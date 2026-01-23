@@ -1,4 +1,4 @@
-How To Contribute to NAIRR Community Resources Documentation
+How To Contribute to NAIRR Community Resources Documentation (Codespaces)
 ============================================================
 
 #. Fork the NAIRRPilot/nairr repository (https://github.com/NAIRRProgram/nairr) and create a working branch.
