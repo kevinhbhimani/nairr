@@ -17,6 +17,7 @@ Contents
 .. toctree::
    :maxdepth: 1
 
+   CONTRIBUTING
    resource_guides/resource_estimation
    
 .. note::
