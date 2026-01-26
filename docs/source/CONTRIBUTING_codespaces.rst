@@ -1,7 +1,9 @@
 How To Contribute to NAIRR Community Resources Documentation (Codespaces)
-============================================================
+=========================================================================
 
-#. Fork the NAIRRPilot/nairr repository (https://github.com/NAIRRProgram/nairr) and create a working branch.
+Refer to `GitHub's documentation for the Fork & Pull Request workflow <https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project>`_ for more information.
+
+#. Fork the NAIRRProgram/nairr repository (https://github.com/NAIRRProgram/nairr) and create a working branch.
 
     #.  Click on the "Fork" button near the top-right of the repository page.
 
@@ -36,7 +38,7 @@ How To Contribute to NAIRR Community Resources Documentation (Codespaces)
         .. image:: /images/contributing/NAIRR_code-start.png
            :alt: Top-level NAIRRProgram/nairr code page.
 
-    #.  Click on ‘Codespaces’ tab if to switch from the 'Local' tab if not already selected.
+    #.  Click on the 'Codespaces' tab to switch from the 'Local' tab if not already selected.
 
         .. image:: /images/contributing/NAIRR_code-local-tab.png
            :alt: The 'Local' tab in the 'Code' window.
@@ -105,7 +107,7 @@ How To Contribute to NAIRR Community Resources Documentation (Codespaces)
         .. image:: /images/contributing/NAIRR_make-html.png
            :alt: Building the project with Make.
 
-    #.  Serve the project by running "python -mhttp.server".
+    #.  Serve the project by running "python -m http.server".
 
         .. image:: /images/contributing/NAIRR_mhttp-server.png
            :alt: Serving the ReadTheDocs build.
@@ -176,14 +178,14 @@ How To Contribute to NAIRR Community Resources Documentation (Codespaces)
         .. image:: /images/contributing/NAIRR_commit-message-check-mark.png
            :alt: The COMMIT_EDITMSG editor with an example commit message and the checkmark to accept the commit message visible at the top right.
 
-    #.  After accepting the commit message, the left-hand window should change to 'Github Pull Request.' Add a meaningful title and description.
+    #.  After accepting the commit message, the left-hand window should change to 'GitHub Pull Request.' Add a meaningful title and description.
 
         .. image:: /images/contributing/NAIRR-create-pull-request.png
            :alt: The Github Pull Request window.
 
         * If the 'Create' button is faded and can't be clicked, it may be because you are trying to merge from 'NAIRRProgram/nairr' which you may not have permission to do. If you have not yet created a branch, you will need to do so.
 
-    #.  Click 'Create.' a tab should open in the codespace to the newly-created pull request.
+    #.  Click 'Create'. A tab should open in the codespace to the newly-created pull request.
 
         .. image:: /images/contributing/NAIRR_sample-title-description.png
            :alt: The 'GitHub Pull Request' window with sample title and description, and with an interactable 'Create' button.
@@ -206,6 +208,5 @@ How To Contribute to NAIRR Community Resources Documentation (Codespaces)
         .. image:: /images/contributing/NAIRR_github-pull-requests-01.png
            :alt: The Pull Requests page, scrolled down to the bottom.
            
-    #.  Once checks are successfull, click Show, and Details to see a full preview of ReadTheDocs with your new content.
+    #.  Once checks are successful, click Show, and Details to see a full preview of ReadTheDocs with your new content.
     #.  Any comments/feedback will be posted here on your pull request.  If your changes are not showing up, you can check status here and comment.
-
