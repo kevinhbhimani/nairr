@@ -17,7 +17,8 @@ Contents
 .. toctree::
    :maxdepth: 1
 
-   CONTRIBUTING
+   CONTRIBUTING_git
+   CONTRIBUTING_codespaces
    resource_guides/resource_estimation
    
 .. note::
