@@ -6,57 +6,61 @@ Generalized Resource Estimation
 
 Overview
 --------
-Welcome! This guide is intended for new researchers interested in
-submitting a NAIRR Pilot proposal who have little experience with
-HPC or large-scale resources. The goal is to help you complete the resource estimation section while completing a NAIRR Pilot proposal
+This guide is intended for new researchers interested in submitting a NAIRR Pilot proposal who have little experience with HPC or large-scale resources. This guide will help researchers complete the resource estimation section while submitting a NAIRR Pilot proposal.
 
 Learning Outcomes
 -----------------
-* Translate a research task into CPU-hours, GPU-hours, node-hours,
-  RAM, and scratch & long-term storage.
-* Produce an estimate for scaling your code on High Performance Computing Systems.
-* Generate metrics that can be used for NAIRR pilot project.
+* Translate a research compute needs into CPU-hours, GPU-hours, node-hours, RAM, and storage.
+* Produce an estimate for scaling code on High Performance Computing Systems.
 
 
+Reference links
+---------------
 Information about currently available resources for **researchers** is at
 `NAIRR Pilot: Resource Requests <https://nairrpilot.org/opportunities/allocations>`_,
 and for **educators** at
 `NAIRR Pilot: Education Call <https://nairrpilot.org/opportunities/education-call>`_.
-A step-by-step request walkthrough is available on YouTube:
+A step by step request walkthrough is available on YouTube:
 `How to request resources <https://www.youtube.com/watch?v=GCTv5OjI1ys&t=184s>`_
-(with slides linked in the video description).
+with slides linked in the video description.
 
 Getting Started
 ---------------
-A well-written proposal includes a detailed breakdown of the resources needed.
-To get started, the following steps can be useful:
+1. **Define the scenarios to run**
+  List the concrete workloads such as preprocessing, training, evaluation, inference, and post processing. For each workload, note expected run count, inputs and outputs, and per run resource needs.
 
-1. **Define the scenarios** you will actually run to understand data preparation, model train, inference, post processing, storage needs.
+2. **Run a small pilot**
+  Execute the same code path on a reduced problem that completes quickly. Record wall time, peak GPU and CPU memory, and output volume such as checkpoints and logs. Keep these measurements for citation in the proposal.
 
-2. **Run a small pilot** that finishes in minutes to collect timing and resource data.
+3. **Measure throughput and scaling**
+  Track a stable throughput metric such as tokens per second, images per second, steps per second, or records per second. Scale from pilot to full runs by dividing total work by throughput and converting to hours. If possible, run at two scales such as 1 GPU and 2 GPUs and report observed efficiency.
 
-3. **Note throughput carefully** to understand your program’s computational behavior.
+4. **Decide concurrency**
+  Choose a realistic number of concurrent jobs based on queue limits and workflow dependencies. Concurrency affects calendar time, not total GPU hours or CPU hours. Note any sequential stages such as preprocessing before training.
 
-4. **Decide concurrency** how many jobs will run in parallel.
+5. **Convert to allocation units**
+  Compute GPU hours as runs times hours per run times GPUs per run, and CPU core hours as runs times hours per run times cores per run. Use node hours when allocation policy is node based or when memory per node is the constraint.
 
-5. **Convert to GPU-hours, core-hours, or node-hours**, using the table below.
+6. **Add overhead**
+  Add a buffer for retries, debugging, profiling, and extra evaluation, often 20 to 30 percent early in a project. If overhead is large, break it into buckets such as profiling runs times runtime times resources. Provide a brief justification for the chosen buffer.
 
-6. **Add an overhead** for retries, queue variability, and profiling.
+7. **Map to SUs and summarize**
+  Convert totals to service units using site specific SU per GPU hour and SU per core hour factors. Report raw totals and SU totals, plus a rough calendar time estimate based on concurrency. Detail the storage needs, separating persistent project storage, peak scratch, and any archive.
 
-7. **Map to SUs** resource estimates based on your resource results.
+Unit conversions and formulas
+-----------------------------
+Definitions for metrics in the guide:
+
+- **GPU hours** = wall hours × GPUs per job × number of jobs
+- **CPU core hours** = wall hours × CPU cores per job × number of jobs
+- **Node hours** = wall hours × nodes per job × number of jobs
+- **Memory usage** can be reported as peak GB per job and total GB hours if needed
+- **Storage** is typically reported as average TB retained per month plus peak scratch needs
 
 
-Unit Conversions & Formulas (at a glance)
------------------------------------------
-- **GPU-hours** = hours × GPUs/job × jobs
-- **Core-hours** = hours × cores/job × jobs
-- **Node-hours** = hours × nodes/job × jobs
-- **GB-hour (memory)** = peak GB × hours
-- **TB-month (storage)** = average TB retained per month
-
-Storage & Data Movement
+Storage
 -----------------------
-Plan for the storage classes you’ll use and how data flows between different storages:
+Plan for the storage classes that will be used and how data flows between different storages:
 
 - **Project storage** (persistent, shared, moderate speed)  
   Long-lived space for datasets, checkpoints, and logs. Backed up and quota-limited.
@@ -65,7 +69,7 @@ Plan for the storage classes you’ll use and how data flows between different s
   Temporary high-performance space used during runs. Purged automatically and not for long term storage. A common retention window is **~7–30 days**, but policies vary by host site.
 
 - **Archive / long-term storage** (persistent, slower, cost-efficient)  
-  For the data you rarely access
+  For the data that rarely accessed
 
   .. note::
    Scratch is typically **not backed up** and is often purged on a schedule. Plan to copy important data and outputs to project storage regularly.
@@ -220,7 +224,17 @@ The SUs scale quickly. To get an estimate for the SU requirement, consider using
    </div>
 
 .. note::
-   Set **SU per core-hour** and **SU per GPU-hour** to match the resource you plan to request.
+   Set **SU per core-hour** and **SU per GPU-hour** to match the resource request.
+
+Hote Site policy
+---------------- 
+Be mindful of site policies and constraints. It is recommend to understand the following factors while planning computations:
+* **Maximum wall time per job**
+* **Maximum GPUs per job**
+* **Job count limits and job array limits**
+* **Per user and per project storage quotas**
+* **Scratch purge policy and retention window**
+* **Whether preemption is possible on the requested resource**
 
 
 Overhead: what to include and how to estimate
@@ -243,7 +257,7 @@ A practical way to estimate overhead
 Use one of these approaches are:
 
 1) **Rule-of-thumb buffer:**
-   Add **20–30%** if you are early in development or new to HPC workflows.
+   Add **20–30%** if the project is in early in development or new to HPC workflows.
 
 2) **Component-based overhead:**
    Estimate overhead as the sum of a few explicit buckets, e.g.:
@@ -254,12 +268,10 @@ Use one of these approaches are:
    - hyperparameter search: [N extra runs] × [runtime] × [resources]
 
 3) **Historical rate:**
-   If you have past runs use it to estimate an “overhead factor”:
+   If past runs are avialbel, they can be use it to estimate an “overhead factor”:
 
 .. note::
-   Unit tests and build-debug loops can meaningfully impact allocations, especially when tests fail and
-   software must be rebuilt or reconfigured. If you run tests on every build or before every large run,
-   include them explicitly in your overhead estimate.
+   Unit tests and build-debug loops can meaningfully impact allocations, especially when tests fail and software must be rebuilt or reconfigured. If tests run on every build or before every large run, it is recommended to include them in the overhead estimate.
 
 Recommended Reading
 -------------------
