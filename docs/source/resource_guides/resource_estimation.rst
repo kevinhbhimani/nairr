@@ -229,12 +229,13 @@ The SUs scale quickly. To get an estimate for the SU requirement, consider using
 Hote Site policy
 ---------------- 
 Be mindful of site policies and constraints. It is recommend to understand the following factors while planning computations:
-* **Maximum wall time per job**
-* **Maximum GPUs per job**
-* **Job count limits and job array limits**
-* **Per user and per project storage quotas**
-* **Scratch purge policy and retention window**
-* **Whether preemption is possible on the requested resource**
+
+- **Maximum wall time per job**
+- **Maximum GPUs per job**
+- **Job count limits and job array limits**
+- **Per user and per project storage quotas**
+- **Scratch purge policy and retention window**
+- **Whether preemption is possible on the requested resource**
 
 
 Overhead: what to include and how to estimate
